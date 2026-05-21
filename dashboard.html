@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estação Meteorológica</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Estação Meteorológica</h1>
+        </header>
+
+        <!-- Dados do Sensor -->
+        <section class="sensor-data">
+            <h2>Dados do Sensor - Tempo Real</h2>
+            <div class="sensor-grid-dash">
+                <!-- Coluna 1: Temperatura + Pressão -->
+                <div class="sensor-col">
+                    <div class="card card-big" id="temperature">
+                        <h3>Temperatura</h3>
+                        <div class="value">-- °C</div>
+                    </div>
+                    <div class="card card-small" id="pressure">
+                        <h3>Pressão</h3>
+                        <div class="value-sm">-- hPa</div>
+                    </div>
+                </div>
+                <!-- Coluna 2: Umidade + Altitude -->
+                <div class="sensor-col">
+                    <div class="card card-big" id="humidity">
+                        <h3>Umidade</h3>
+                        <div class="value">-- %</div>
+                    </div>
+                    <div class="card card-small" id="altitude">
+                        <h3>Altitude</h3>
+                        <div class="value-sm">-- m</div>
+                    </div>
+                </div>
+            </div>
+            <div class="last-update" id="sensor-status">Carregando dados do sensor...</div>
+        </section>
+
+        <!-- Resumo de Riscos (agora antes do mapa de calor) -->
+        <section class="high-risk-days">
+            <h2>Resumo de Riscos</h2>
+            <div class="risk-analysis">
+                <div class="risk-summary">
+                    <h3>Dados Históricos</h3>
+                    <div id="risk-summary">Carregando...</div>
+                </div>
+                <div class="current-conditions">
+                    <h3>Condições Atuais</h3>
+                    <div id="current-conditions-analysis">Aguardando sensor...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mapa de Calor (agora depois do resumo) -->
+        <section class="cross-analysis">
+            <h2>Precipitação Média por Zona - Mapa de Calor</h2>
+
+            <div class="analysis-controls">
+                <div class="control-group">
+                    <label for="zone-select">Zona:</label>
+                    <select id="zone-select">
+                        <option value="Norte">Norte</option>
+                        <option value="Sul">Sul</option>
+                        <option value="Leste">Leste</option>
+                        <option value="Oeste">Oeste</option>
+                        <option value="Centro">Centro</option>
+                    </select>
+                </div>
+                <button id="load-heatmap-btn">Carregar Mapa de Calor</button>
+            </div>
+
+            <div class="chart-box full-width">
+                <h3 id="zone-heatmap-title">Selecione uma zona e clique em "Carregar Mapa de Calor"</h3>
+                <div class="heatmap-container">
+                    <div id="zone-heatmap-tooltip"></div>
+                    <canvas id="zone-heatmap-chart"></canvas>
+                </div>
+                <p id="heatmap-info" style="margin-top:10px;color:#666;font-size:13px;"></p>
+            </div>
+        </section>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>clea

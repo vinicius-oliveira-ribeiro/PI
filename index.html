@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Sensor Ambiental</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Monitor de Sensor Ambiental</h1>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="sensors-tab" data-bs-toggle="tab" data-bs-target="#sensors" type="button" role="tab" aria-controls="sensors" aria-selected="true">Sensores</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#map" type="button" role="tab" aria-controls="map" aria-selected="false">Mapa de Calor SP</button>
+            </li>
+        </ul>
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="sensors" role="tabpanel" aria-labelledby="sensors-tab">
+                <div class="sensor-grid">
+                    <div class="sensor-card" id="temperature">
+                        <h2>Temperatura</h2>
+                        <div class="value">-- °C</div>
+                        <div class="icon">🌡️</div>
+                    </div>
+                    <div class="sensor-card" id="pressure">
+                        <h2>Pressão</h2>
+                        <div class="value">-- hPa</div>
+                        <div class="icon">📊</div>
+                    </div>
+                    <div class="sensor-card" id="humidity">
+                        <h2>Umidade</h2>
+                        <div class="value">-- %</div>
+                        <div class="icon">💧</div>
+                    </div>
+                    <div class="sensor-card" id="altitude">
+                        <h2>Altitude</h2>
+                        <div class="value">-- m</div>
+                        <div class="icon">🏔️</div>
+                    </div>
+                </div>
+                <div class="status">
+                    <div class="status-indicator" id="status">Conectando...</div>
+                    <div class="last-update">Última atualização: --</div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="map" role="tabpanel" aria-labelledby="map-tab">
+                <iframe src="mapa_geografico_calor_SP.html" width="100%" height="600" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
