@@ -1,0 +1,11 @@
+input/
+node_modules/
+bridge/
+supabase/
+tests/
+SP_Municipios_2020/
+SP_Municipios_2020.zip
+*.png
+mapa_geografico_calor_SP.html
+precipitation_data.json
+

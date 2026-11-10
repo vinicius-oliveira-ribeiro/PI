@@ -4,7 +4,8 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
+const SENSOR_URL = process.env.SENSOR_URL || 'http://192.168.15.39/sensor';
 
 // Middleware
 app.use(cors());
@@ -15,7 +16,7 @@ app.get('/api/sensor', async (req, res) => {
     try {
         const fetch = (await import('node-fetch')).default;
 
-        const response = await fetch('http://192.168.15.39/sensor', {
+        const response = await fetch(SENSOR_URL, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -55,7 +56,16 @@ app.get('/api/precipitation', (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
-    console.log('Acesse a interface em: http://localhost:3000');
+    console.log(`Nova interface: http://localhost:${PORT}/web/`);
+});
+
+server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+        console.error(`A porta ${PORT} já está em uso. Se a página abrir em http://localhost:${PORT}/web/, o servidor já está rodando. Caso contrário, defina outra porta com PORT=3001.`);
+    } else {
+        console.error('Não foi possível iniciar o servidor:', error);
+    }
+    process.exitCode = 1;
 });

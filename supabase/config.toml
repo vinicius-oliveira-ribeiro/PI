@@ -1,0 +1,3 @@
+[functions.ingest-sensor]
+# The ESP32/PC bridge has its own per-station token, checked inside the function.
+verify_jwt = false

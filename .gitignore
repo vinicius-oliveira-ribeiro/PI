@@ -1,0 +1,8 @@
+dist/
+bridge/.data/
+.env
+.env.*
+!.env.example
+!bridge/.env.example
+.vercel/
+

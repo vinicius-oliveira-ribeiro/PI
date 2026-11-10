@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071d2b">
+  <meta name="description" content="Painel de monitoramento BME280 e pluviometria histórica da cidade de São Paulo.">
+  <title>Observatório | Estação meteorológica</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./config.js"></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Navegação principal">
+      <a class="brand" href="#inicio" aria-label="Observatório, início">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M4 26c4-8 7-8 11 0s7 8 11 0 7-8 10 0"/><path d="M8 17c3-5 5-5 8 0s5 5 8 0 5-5 8 0"/></svg></span>
+        <span><strong>OBSERVATÓRIO</strong><small>Estação meteorológica</small></span>
+      </a>
+      <div class="sidebar-label">PAINEL</div>
+      <nav class="side-nav">
+        <a class="active" href="#inicio"><span class="nav-icon" aria-hidden="true">◫</span> Visão geral</a>
+        <a href="#historico"><span class="nav-icon" aria-hidden="true">▥</span> Chuva histórica</a>
+        <a href="#estacao"><span class="nav-icon" aria-hidden="true">⌁</span> Estação BME280</a>
+        <a href="#metodologia"><span class="nav-icon" aria-hidden="true">ⓘ</span> Sobre os dados</a>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="source-note"><span class="source-dot"></span><span>Fonte histórica<br><strong>Boletins CGE · São Paulo</strong></span></div>
+      <p class="sidebar-footer">Dados e contexto para acompanhamento meteorológico.</p>
+    </aside>
+
+    <main id="inicio" class="main-content">
+      <header class="topbar">
+        <div class="breadcrumbs">Painel <span>/</span> Visão geral</div>
+        <div class="top-actions"><span id="mode-badge" class="mode-badge">Carregando dados</span><button id="refresh-button" class="icon-button" type="button" title="Atualizar dados" aria-label="Atualizar dados"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2 6M20 5v6h-6"/></svg></button></div>
+      </header>
+
+      <div class="page-content">
+        <section class="intro">
+          <div><div class="eyebrow"><span></span> SÃO PAULO · MONITORAMENTO AMBIENTAL</div><h1>Tempo presente.<br><em>História da chuva.</em></h1><p>Leituras da estação BME280 e registros pluviométricos reunidos para explorar padrões ao longo dos anos.</p></div>
+          <div class="intro-art" aria-hidden="true"><div class="art-rings"></div><svg class="art-wave" viewBox="0 0 400 180" preserveAspectRatio="none"><path d="M-10 130 C45 95 70 150 125 100 S205 100 250 70 325 110 410 30"/></svg><div class="art-reading"><span>PRECIPITAÇÃO HISTÓRICA</span><strong>2010—2025</strong></div></div>
+        </section>
+
+        <div id="notice" class="notice" role="status" hidden></div>
+
+        <section class="section-block current-section" aria-labelledby="current-title">
+          <div class="section-heading"><div><div class="section-kicker">AGORA NA ESTAÇÃO</div><h2 id="current-title">Condições atuais</h2></div><span id="sensor-status" class="status-pill is-waiting"><span></span> Aguardando leituras</span></div>
+          <div class="metric-grid">
+            <article class="metric-card metric-temp"><div class="metric-top"><span class="metric-icon">°</span><span>TEMPERATURA</span></div><div class="metric-value" id="current-temperature">—</div><p>Temperatura do ar <span>°C</span></p></article>
+            <article class="metric-card metric-humidity"><div class="metric-top"><span class="metric-icon">◕</span><span>UMIDADE RELATIVA</span></div><div class="metric-value" id="current-humidity">—</div><p>Umidade do ar <span>%</span></p></article>
+            <article class="metric-card metric-pressure"><div class="metric-top"><span class="metric-icon">⌁</span><span>PRESSÃO ATMOSFÉRICA</span></div><div class="metric-value" id="current-pressure">—</div><p>Pressão do ar <span>hPa</span></p></article>
+            <article class="metric-card metric-update"><div class="metric-top"><span class="metric-icon">↗</span><span>ÚLTIMA LEITURA</span></div><div class="metric-value metric-time" id="current-time">—</div><p id="current-date">Aguardando envio do ESP32</p></article>
+          </div>
+          <p class="current-footnote" id="current-footnote">Os valores aparecem quando as leituras do ESP32 forem enviadas ao banco.</p>
+        </section>
+
+        <section id="historico" class="section-block" aria-labelledby="historical-title">
+          <div class="section-heading"><div><div class="section-kicker">REGISTROS PLUVIOMÉTRICOS</div><h2 id="historical-title">Chuva ao longo do tempo</h2></div><span class="dataset-tag">CGE · Arquivos CSV</span></div>
+          <form id="filters" class="filters">
+            <label>Região<select id="zone-filter"><option value="">Todas as zonas</option><option>Norte</option><option>Sul</option><option>Leste</option><option>Oeste</option><option>Centro</option></select></label>
+            <label>De<input id="start-filter" type="date" min="2010-01-01"></label>
+            <label>Até<input id="end-filter" type="date" min="2010-01-01"></label>
+            <button type="submit" class="primary-button">Aplicar filtros <span aria-hidden="true">→</span></button>
+          </form>
+          <div class="summary-grid">
+            <article class="summary-card"><span>CHUVA NO PERÍODO</span><strong id="summary-rain">—</strong><small>mm · média diária das estações, somada</small></article>
+            <article class="summary-card"><span>MÉDIA POR ANO</span><strong id="summary-annual">—</strong><small>mm no intervalo escolhido por ano</small></article>
+            <article class="summary-card"><span>PERÍODO ANALISADO</span><strong id="summary-years">—</strong><small>anos com registros disponíveis</small></article>
+          </div>
+          <article class="context-panel" aria-labelledby="context-title">
+            <div class="context-intro"><span class="context-symbol" aria-hidden="true">↗</span><div><div class="section-kicker">CRUZAMENTO DE DADOS</div><h3 id="context-title">Leitura atual × padrão sazonal</h3><p id="context-description">Comparação descritiva entre a estação e a chuva histórica do mês.</p></div></div>
+            <div class="context-facts"><div><span>ESTAÇÃO BME280</span><strong id="context-sensor">—</strong><small>Temperatura · Umidade · Pressão</small></div><div><span id="context-month">CHUVA HISTÓRICA DO MÊS</span><strong id="context-rain">—</strong><small id="context-years">—</small></div></div>
+          </article>
+          <div class="chart-grid">
+            <article class="panel panel-wide"><div class="panel-head"><div><h3>Evolução anual</h3><p>Soma das médias diárias de chuva em cada ano</p></div><button id="download-button" class="text-button" type="button">Baixar CSV <span aria-hidden="true">↓</span></button></div><div id="annual-chart" class="chart-wrap" role="img" aria-label="Gráfico de precipitação anual"></div></article>
+            <article class="panel"><div class="panel-head"><div><h3>Perfil dos meses</h3><p>Média de cada mês nos anos selecionados</p></div></div><div id="monthly-chart" class="chart-wrap" role="img" aria-label="Gráfico de precipitação média mensal"></div></article>
+            <article class="panel"><div class="panel-head"><div><h3>Comparação regional</h3><p>Chuva acumulada no período por zona</p></div></div><div id="zone-chart" class="zone-bars" role="img" aria-label="Comparação de precipitação por zona"></div></article>
+          </div>
+          <div class="data-caption" id="history-caption">Os boletins históricos da CGE são a fonte dos valores de chuva. A cobertura pode variar conforme o período e a estação.</div>
+        </section>
+
+        <section id="estacao" class="section-block" aria-labelledby="station-title">
+          <div class="section-heading"><div><div class="section-kicker">SÉRIE DE MEDIÇÕES</div><h2 id="station-title">Estação BME280</h2></div><label class="compact-select">Período<select id="sensor-range"><option value="24h">24 horas</option><option value="7d" selected>7 dias</option><option value="30d">30 dias</option><option value="1y">12 meses</option><option value="all">Tudo</option></select></label></div>
+          <article class="panel station-panel"><div class="panel-head"><div><h3 id="sensor-chart-title">Temperatura</h3><p id="sensor-chart-subtitle">Evolução das leituras armazenadas</p></div><div class="segmented" role="group" aria-label="Variável da estação"><button type="button" class="active" data-sensor-variable="temperature_c" aria-pressed="true">Temperatura</button><button type="button" data-sensor-variable="humidity_pct" aria-pressed="false">Umidade</button><button type="button" data-sensor-variable="pressure_hpa" aria-pressed="false">Pressão</button></div></div><div id="sensor-chart" class="chart-wrap sensor-chart" role="img" aria-label="Série de medições do sensor"></div><div class="chart-legend"><span><i></i> BME280</span><span id="sample-count">— leituras no período</span></div></article>
+        </section>
+
+        <section id="metodologia" class="section-block about-section" aria-labelledby="about-title"><div class="about-icon" aria-hidden="true">i</div><div><div class="section-kicker">COMO LER ESTE PAINEL</div><h2 id="about-title">Dados para análise, com contexto.</h2><p>A chuva histórica vem dos boletins pluviométricos da CGE. Para cada dia, o painel calcula a média das estações disponíveis na região; os totais mensais e anuais somam essas médias diárias. Temperatura, umidade e pressão vêm do BME280 conectado ao ESP32.</p><p><strong>Avaliação de enchentes:</strong> os dados atuais ainda não incluem medição de chuva em tempo real nem registros de ocorrências de alagamento para validar uma previsão. Por isso, este painel apresenta medições e padrões históricos sem classificar risco imediato.</p></div></section>
+        <footer class="footer"><span>Observatório · Estação meteorológica</span><span id="footer-updated">Dados históricos da CGE</span></footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

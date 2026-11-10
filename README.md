@@ -1,4 +1,24 @@
-# Estação Meteorológica - Monitoramento e Análise de Precipitação
+# Estação Meteorológica — nova interface web
+
+O projeto agora inclui uma interface preparada para a Vercel, um banco PostgreSQL
+no Supabase, importação dos boletins pluviométricos existentes e um coletor para
+enviar as leituras do ESP32/BME280 pelo computador. No computador, a nova página
+também lê o sensor pela rota `/api/sensor` usada pela interface antiga. O histórico
+de chuva vem **somente** dos CSVs em `input/`.
+
+- **Interface nova:** `web/` (prévia local em `/web/` após `npm start`)
+- **Banco e recebimento:** `supabase/`
+- **Importação histórica:** `tools/import-precipitation.mjs`
+- **Coletor do ESP32:** `bridge/collector.mjs`
+- **Configuração e publicação:** [docs/IMPLANTACAO.md](docs/IMPLANTACAO.md)
+
+A nova interface permite uma análise exploratória das leituras disponíveis e
+da chuva histórica. O BME280 não mede precipitação; portanto, o projeto ainda
+não tem chuva em tempo real nem um modelo validado de previsão de enchentes.
+
+---
+
+# Protótipo local anterior — Monitoramento e Análise de Precipitação
 
 Este projeto integra um **monitor de sensor ambiental em tempo real** com **dados históricos de precipitação** do estado de São Paulo, oferecendo uma interface web para visualização e análise de riscos.
 
