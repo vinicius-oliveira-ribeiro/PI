@@ -46,8 +46,9 @@ O resultado fica em `dist/`.
 
 1. No projeto Supabase, configure a integração GitHub com o repositório `PI`,
    diretório de trabalho `.` e a opção **Deploy to production** para a branch
-   `main`. O `supabase/config.toml` já associa `main` ao projeto. Confira no
-   painel que a migração `20261109000100_weather_data` e a função
+   `main`. O `supabase/config.toml` declara apenas a função; sem um bloco
+   `[remotes.main]`, os próximos envios não alteram o Auth do projeto.
+   Confira no painel que a migração `20261109000100_weather_data` e a função
    `ingest-sensor` foram implantadas. Não execute manualmente a mesma migração
    se ela já aparecer como concluída.
 2. Se a integração GitHub não implantar o esquema, aplique o arquivo
