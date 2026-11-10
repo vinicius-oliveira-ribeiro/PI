@@ -84,14 +84,14 @@ token criado em `supabase/README.md` e a rota local do ESP32. O padrão é
 `http://192.168.15.39/sensor`, a mesma rota usada pelo servidor atual.
 
 ```powershell
-Copy-Item bridge/.env.example bridge/.env
-node --env-file=bridge/.env bridge/collector.mjs --once --dry-run
-node --env-file=bridge/.env bridge/collector.mjs --once
-node --env-file=bridge/.env bridge/collector.mjs
+if (-not (Test-Path bridge/.env)) { Copy-Item bridge/.env.example bridge/.env }
+npm run bridge:check
+npm run bridge:once
+npm run bridge
 ```
 
-O primeiro comando com `--dry-run` lê o sensor e mostra os valores normalizados,
-sem enviar ao banco. O segundo envia uma leitura. O terceiro mantém a coleta
+O comando `bridge:check` lê o sensor e mostra os valores normalizados,
+sem enviar ao banco. `bridge:once` envia uma leitura. `bridge` mantém a coleta
 contínua, a cada 60 segundos por padrão. Ele deve permanecer rodando neste
 computador. Para usar o Wi-Fi do ESP32 diretamente no futuro, ele poderá enviar
 o mesmo JSON e token à função `ingest-sensor`.

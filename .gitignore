@@ -1,8 +1,10 @@
 dist/
+node_modules/
 bridge/.data/
 .env
 .env.*
 !.env.example
 !bridge/.env.example
 .vercel/
+supabase/.temp/
 
