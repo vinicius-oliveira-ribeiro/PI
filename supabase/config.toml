@@ -2,6 +2,7 @@
 # The ESP32/PC bridge has its own per-station token, checked inside the function.
 verify_jwt = false
 
-# Production project created for the GitHub-connected main branch.
+# GitHub integration: working directory ".", production branch "main".
+# The production workflow applies migrations before deploying ingest-sensor.
 [remotes.main]
 project_id = "yzniqqpomkwyvbxlxryx"
