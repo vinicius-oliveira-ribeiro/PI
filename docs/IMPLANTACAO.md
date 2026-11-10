@@ -51,9 +51,10 @@ O resultado fica em `dist/`.
    Confira no painel que a migração `20261109000100_weather_data` e a função
    `ingest-sensor` foram implantadas. Não execute manualmente a mesma migração
    se ela já aparecer como concluída.
-2. Se a integração GitHub não implantar o esquema, aplique o arquivo
-   `supabase/migrations/20261109000100_weather_data.sql` no SQL Editor e publique
-   a função como descrito em [supabase/README.md](../supabase/README.md).
+2. Se a integração parar antes da migração, verifique o acesso ao banco e os
+   bloqueios de IP conforme [supabase/README.md](../supabase/README.md).
+   Aplicar o SQL diretamente no editor exige reconciliar depois o histórico
+   de migrações do Supabase.
 3. Configure o token da estação no banco como indicado em `supabase/README.md`.
 4. Importe os CSVs existentes. Em uma janela PowerShell com a URL e a chave
    **secreta** do projeto definidas como variáveis de ambiente:

@@ -6,9 +6,13 @@ o token do dispositivo e a chave **secret** ficam fora do navegador.
 
 ## Preparação no Supabase
 
-1. Crie um projeto Supabase e aplique `migrations/20261109000100_weather_data.sql`
-   no SQL Editor (ou pelo fluxo de migrations da CLI).
-2. Publique a função `ingest-sensor` com `supabase functions deploy ingest-sensor`.
+1. Crie um projeto Supabase e conecte o repositório `PI` à branch de produção
+   `main` pela integração GitHub. Use `.` como diretório de trabalho, pois
+   `supabase/` está na raiz. A integração aplica a migração e publica a função
+   após cada envio. Confirme a conclusão no painel antes de importar dados.
+2. Se optar pela CLI em vez da integração, vincule o projeto, aplique a migração
+   com `supabase db push --remote` e publique a função com
+   `supabase functions deploy ingest-sensor`.
    O `config.toml` desliga a validação JWT da plataforma **apenas nessa função**;
    a função exige `x-device-token` e confere seu hash no banco.
 3. Gere um segredo aleatório e seu hash SHA-256 no computador com Node.js:
@@ -66,3 +70,12 @@ em cada tentativa. A função devolve HTTP 202 quando aceita a leitura.
 As tabelas e funções de leitura têm acesso anônimo para o painel público.
 A escrita é reservada ao coletor autenticado e à importação feita com chave
 de servidor. Não coloque essa chave nas variáveis públicas da Vercel.
+
+## Se a implantação não alcançar a migração
+
+Se o log mostrar `connection refused` antes da etapa `migrate`, confira se o
+SQL Editor responde a `select 1;`. Depois, em **Database Settings**, verifique
+**Unban IP** e **Network Restrictions**. O IPv6 exibido em `host=[...]:5432` é
+o destino da conexão, não o IP a desbloquear. Após corrigir o acesso, envie um
+novo commit à `main` para repetir o fluxo. Rodar a migração no SQL Editor sem
+registrá-la no histórico pode deixar o banco fora de sincronia com o GitHub.
