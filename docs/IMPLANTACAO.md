@@ -44,14 +44,16 @@ O resultado fica em `dist/`.
 
 ## Criar o banco no Supabase
 
-1. Crie um projeto no Supabase.
-2. Aplique o arquivo `supabase/migrations/20261109000100_weather_data.sql` no SQL
-   Editor do projeto. As tabelas armazenam chuva por estação e dia e leituras
-   do BME280 por instante. As funções `dashboard_*` fornecem os dados agregados
-   para os gráficos.
-3. Publique a função `supabase/functions/ingest-sensor` conforme
-   [supabase/README.md](../supabase/README.md). Configure o token da estação no
-   banco como indicado lá.
+1. No projeto Supabase, configure a integração GitHub com o repositório `PI`,
+   diretório de trabalho `.` e a opção **Deploy to production** para a branch
+   `main`. O `supabase/config.toml` já associa `main` ao projeto. Confira no
+   painel que a migração `20261109000100_weather_data` e a função
+   `ingest-sensor` foram implantadas. Não execute manualmente a mesma migração
+   se ela já aparecer como concluída.
+2. Se a integração GitHub não implantar o esquema, aplique o arquivo
+   `supabase/migrations/20261109000100_weather_data.sql` no SQL Editor e publique
+   a função como descrito em [supabase/README.md](../supabase/README.md).
+3. Configure o token da estação no banco como indicado em `supabase/README.md`.
 4. Importe os CSVs existentes. Em uma janela PowerShell com a URL e a chave
    **secreta** do projeto definidas como variáveis de ambiente:
 
