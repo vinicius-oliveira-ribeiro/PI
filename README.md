@@ -1,227 +1,96 @@
-# Estação Meteorológica — nova interface web
+# Estação meteorológica e histórico de chuva
 
-O projeto agora inclui uma interface preparada para a Vercel, um banco PostgreSQL
-no Supabase, importação dos boletins pluviométricos existentes e um coletor para
-enviar as leituras do ESP32/BME280 pelo computador. No computador, a nova página
-também lê o sensor pela rota `/api/sensor` usada pela interface antiga. O histórico
-de chuva vem **somente** dos CSVs em `input/`.
+Este projeto reúne leituras de um ESP32 com sensor BME280 e boletins históricos de pluviometria da cidade de São Paulo. A interface permite acompanhar temperatura, umidade e pressão ao longo do tempo e comparar essas medições com padrões de chuva dos arquivos do próprio projeto.
 
-- **Interface nova:** `web/` (prévia local em `/web/` após `npm start`)
-- **Banco e recebimento:** `supabase/`
-- **Importação histórica:** `tools/import-precipitation.mjs`
-- **Coletor do ESP32:** `bridge/collector.mjs`
-- **Configuração e publicação:** [docs/IMPLANTACAO.md](docs/IMPLANTACAO.md)
+**Painel publicado:** [estacao-meteorologica-pi-omega.vercel.app](https://estacao-meteorologica-pi-omega.vercel.app/)
 
-A nova interface permite uma análise exploratória das leituras disponíveis e
-da chuva histórica. O BME280 não mede precipitação; portanto, o projeto ainda
-não tem chuva em tempo real nem um modelo validado de previsão de enchentes.
+O objetivo de longo prazo é estudar a relação entre condições meteorológicas e enchentes. A versão atual apresenta medições e comparações descritivas. O BME280 não mede chuva, e os dados disponíveis ainda não incluem pluviometria em tempo real nem ocorrências de enchente para treinar e validar uma previsão. Por isso, o painel publicado não classifica risco imediato.
 
----
+## Dados disponíveis
 
-# Protótipo local anterior — Monitoramento e Análise de Precipitação
+- **Estação atual:** temperatura (°C), umidade relativa (%), pressão atmosférica (hPa) e altitude estimada (m), fornecidas pelo BME280 conectado ao ESP32.
+- **Chuva histórica:** 190 arquivos CSV em input/, com 189.377 medições de 35 estações entre 01/01/2010 e 31/10/2025. Nenhum conjunto de dados externo é baixado durante a importação.
+- **Agregação da chuva:** para cada dia, o painel calcula a média das estações com registro na zona selecionada. Os valores mensais e anuais somam essas médias diárias. A quantidade de estações varia conforme a data.
 
-Este projeto integra um **monitor de sensor ambiental em tempo real** com **dados históricos de precipitação** do estado de São Paulo, oferecendo uma interface web para visualização e análise de riscos.
+## Arquitetura
 
-## Páginas do Sistema
+~~~text
+ESP32 + BME280 ── Wi-Fi /sensor ──► coletor no computador
+                                      │ leitura a cada 60 s; fila local em falhas
+                                      ▼
+                              Supabase Edge Function ingest-sensor
+                                      │ valida token da estação
+                                      ▼
+Boletins CSV em input/ ── importador ─► PostgreSQL no Supabase
+                                      │ Data API e funções SQL de leitura
+                                      ▼
+                              interface estática na Vercel
+~~~
 
-### 1. Monitor do Sensor - index.html
-Página principal que exibe em tempo real os dados do sensor IoT:
-- Temperatura
-- Pressão atmosférica
-- Umidade relativa do ar
-- Altitude
+O computador consulta o ESP32 em http://192.168.15.39/sensor por padrão. O coletor envia as leituras à função ingest-sensor e guarda eventos pendentes em bridge/.data/ quando a conexão falha. Cada evento tem um identificador único para evitar duplicação ao reenviar. A interface publicada consulta somente o Supabase; ela não depende de acesso à rede local do ESP32.
 
-Acessível em: `http://localhost:3000` (ou `http://localhost:3000/index.html`)
+| Componente | Local | Responsabilidade |
+| --- | --- | --- |
+| Interface | web/ e Vercel | Gráficos, filtros por período e zona, última leitura e comparação histórica |
+| Coletor | bridge/collector.mjs no computador | Ler /sensor, normalizar dados e enviar ou enfileirar leituras |
+| Recebimento | supabase/functions/ingest-sensor/ | Autenticar a estação e gravar leituras |
+| Banco | supabase/migrations/ e Supabase | Armazenar séries históricas e medições do sensor |
+| Importação | tools/import-precipitation.mjs | Normalizar os CSVs de input/ e enviar os registros ao banco |
 
-### 2. Estação Meteorológica - dashboard.html
-Dashboard completo com análise cruzada entre dados do sensor e precipitação histórica, contendo:
-- Dados do sensor em tempo real
-- Resumo de riscos com análise de enchente por zona
-- Mapa de calor da precipitação média por zona
+No PostgreSQL, public.precipitation_daily armazena a chuva por estação e data, public.sensor_readings armazena as leituras do ESP32, e private.device_tokens guarda apenas o hash do token da estação. A view sensor_latest e as funções dashboard_precipitation_series e dashboard_sensor_series atendem ao painel. As tabelas públicas usam Row Level Security: a interface pode ler, enquanto a escrita depende de credenciais de servidor ou do token validado pela Edge Function.
 
-Acessível em: `http://localhost:3000/dashboard.html`
+## Executar no computador
 
----
+Requer Node.js 22 ou superior e npm.
 
-## Funcionalidades
-
-### Monitor do Sensor
-- Monitoramento em tempo real de temperatura, pressão, umidade e altitude
-- Atualização automática a cada 5 segundos
-- Servidor proxy local para resolver CORS com dispositivo IoT
-- Indicadores visuais de status de conexão
-
-### Estação Meteorológica (Dashboard)
-- **Dados do Sensor**: Temperatura (grande) + Pressão (pequeno) | Umidade (grande) + Altitude (pequeno)
-- **Resumo de Riscos**:
-  - Risco de enchente por zona (ALTO/MÉDIO/BAIXO)
-  - Estatísticas históricas da zona selecionada
-  - Análise combinada (sensor + histórico) com recomendações
-  - Classificação em 4 níveis: BAIXO, MÉDIO, ALTO, CRÍTICO
-- **Mapa de Calor**: Precipitação média por dia e mês, por zona selecionável, com escala azul (claro → escuro) e tooltip interativo
-
-### Análise de Precipitação (Python)
-- Processa múltiplos arquivos CSV de dados de pluviometria da CGESP
-- Calcula médias diárias de precipitação agregadas por dia do ano
-- Gera gráficos de precipitação para cada mês e anual
-- Cria mapa geográfico interativo com marcadores filtráveis
-- Gera mapa de calor mensal
-
----
-
-## Requisitos
-
-### Para o servidor web e dashboard:
-- Node.js (versão 14 ou superior)
-- npm
-
-### Para processamento de dados históricos:
-- Python 3.x
-- Bibliotecas: pandas, matplotlib, geopandas, folium, seaborn, numpy
-
----
-
-## Instalação
-
-### 1. Instalar dependências Python (para processar dados CSV)
-```bash
-pip install pandas matplotlib geopandas folium seaborn numpy
-```
-
-### 2. Baixar shapefile dos municípios de SP (opcional)
-- Acesse o GeoSampa: https://geosampa.prefeitura.sp.gov.br/
-- Baixe o shapefile dos municípios em formato SHP
-- Descompacte o arquivo ZIP na pasta raiz do projeto
-
-### 3. Instalar dependências Node.js
-```bash
+~~~powershell
 npm install
-```
-
----
-
-## Como Usar
-
-### 1. Processar dados históricos de precipitação
-```bash
-python generate_precipitation_data.py
-```
-Este comando processa todos os arquivos CSV da pasta `input/` (190+ arquivos de 2010 a 2025) e gera:
-- `precipitation_data.json` - dados processados para o dashboard
-
-### 2. Iniciar o servidor
-```bash
 npm start
-```
-O servidor inicia em `http://localhost:3000`
+~~~
 
-### 3. Acessar as páginas
-- **Monitor do Sensor**: `http://localhost:3000`
-- **Estação Meteorológica**: `http://localhost:3000/dashboard.html`
+A interface atual fica em http://localhost:3000/web/. O servidor local também mantém as páginas do protótipo em / e /dashboard.html e oferece /api/sensor para leitura local do ESP32. Sem configuração do Supabase, /web/ usa uma prévia gerada dos CSVs existentes; essa prévia não substitui o banco da versão publicada.
 
----
+Para configurar o coletor, copie bridge/.env.example para bridge/.env, preencha a URL do projeto, o token da estação e o endereço do ESP32. O arquivo .env é local e está fora do Git.
 
-## Estrutura do Projeto
+~~~powershell
+if (-not (Test-Path bridge/.env)) { Copy-Item bridge/.env.example bridge/.env }
+npm run bridge:check   # lê o sensor sem enviar
+npm run bridge:once    # envia uma leitura
+npm run bridge         # continua enviando a cada minuto
+~~~
 
-```
-/
-├── server.js                          # Servidor Express (proxy sensor + API dados)
-├── package.json                       # Dependências Node.js
-├── index.html                         # Monitor do sensor
-├── dashboard.html                     # Estação Meteorológica
-├── script.js                          # Lógica frontend do monitor
-├── dashboard.js                       # Lógica frontend do dashboard
-├── style.css                          # Estilos compartilhados
-├── generate_precipitation_data.py     # Processa CSV → JSON
-├── analisePreditiva.py                # Script completo de análise (gráficos, mapas)
-├── precipitation_data.json            # Dados históricos processados (gerado)
-├── input/                             # Arquivos CSV de pluviometria
-│   ├── 2010-01-PLUVIOMETRIA-CGESP.csv
-│   ├── ...
-│   └── 2024-12-PLUVIOMETRIA-CGESP.csv
-├── README.md
-├── precipitacao_mes_1.png ... 12.png  # Gráficos mensais (gerados)
-├── precipitacao_ano_completo.png      # Gráfico anual (gerado)
-├── mapa_geografico_calor_SP.html      # Mapa interativo (gerado)
-├── heatmap_precipitacao.png           # Mapa de calor (gerado)
-└── SP_Municipios_2020/                # Shapefile (opcional)
-```
+No computador da estação, a tarefa do Windows PI-Coletor-ESP32 inicia o coletor quando o usuário entra na conta. Se o coletor já estiver aberto manualmente, evite iniciar outra cópia. O computador e o ESP32 precisam permanecer ligados e conectados à rede para que novas leituras cheguem ao banco.
 
----
+## Banco e publicação
 
-## Configuração do Dispositivo Sensor
+- **Supabase:** a migração supabase/migrations/20261109000100_weather_data.sql cria tabelas, índices, políticas de acesso e consultas do painel. A função ingest-sensor recebe os dados do coletor. O histórico de chuva foi importado dos CSVs do repositório.
+- **Vercel:** vercel.json executa npm run build e publica dist/. O build recebe SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY nos ambientes Production e Preview. A chave publicável é usada somente para leitura pelo navegador.
+- **Segredos:** DEVICE_TOKEN fica em bridge/.env ou no dispositivo; o banco guarda apenas seu SHA-256. A chave secreta do Supabase é usada na importação e no serviço, nunca no código publicado pela Vercel.
 
-O servidor faz proxy para o sensor no endereço `http://192.168.15.39/sensor`. Para alterar:
-1. Edite o arquivo `server.js`
-2. Localize a linha: `const response = await fetch('http://192.168.15.39/sensor', {`
-3. Substitua pelo IP correto do seu dispositivo
+Para conferir os CSVs, compilar a interface e executar os testes:
 
----
+~~~powershell
+node tools/import-precipitation.mjs
+npm run build
+npm test
+~~~
 
-## Análise de Risco de Enchente
+O procedimento completo de configuração, importação e publicação está em [docs/IMPLANTACAO.md](docs/IMPLANTACAO.md). O contrato da função e das consultas SQL está em [supabase/README.md](supabase/README.md).
 
-O sistema calcula o risco de enchente combinando:
+## Organização do repositório
 
-**Fatores do sensor atual:**
-- Umidade > 80% (+2 pontos), > 90% (+3 pontos)
-- Pressão < 1000 hPa (+2 pontos), < 990 hPa (+3 pontos)
-- Temperatura < 18°C (+1 ponto)
-
-**Fatores históricos da zona:**
-- Precipitação máxima > 50mm (+3 pontos)
-- Precipitação máxima > 30mm (+2 pontos)
-
-**Classificação:**
-- 0-1 ponto: BAIXO ✅
-- 2-3 pontos: MÉDIO ⚡
-- 4-5 pontos: ALTO ⚠️
-- 6+ pontos: CRÍTICO 🚨
-
----
-
-## Mapeamento de Zonas
-
-| Zona | Regiões |
-|------|---------|
-| **Norte** | Casa Verde, Freguesia do Ó, Jaçanã/Tremembé, Vila Maria/Guilherme, Pirituba/Jaraguá, Perus, Santana |
-| **Leste** | Aricanduva/Vila Formosa, Ermelino Matarazo, Guaianazes, Itaquera, Itaim Paulista, Móoca, São Miguel Paulista, Penha, São Mateus, Cidade Tiradentes, Vila Prudente |
-| **Sul** | Campo Limpo, Capela do Socorro, Ipiranga, Jabaquara, Santo Amaro, Vila Mariana, Parelheiros |
-| **Oeste** | Butantã, Lapa, Pinheiros |
-| **Centro** | Bom Retiro, Consolação, Sé |
-
----
-
-## Resolução de Problemas
-
-### Interface não carrega dados após reiniciar o computador
-- **Causa**: O servidor Node.js para após o reinício
-- **Solução**: Execute `npm start` novamente
-
-### Erro de conexão com o sensor
-- Verifique se o dispositivo está ligado e na mesma rede
-- Teste a conectividade: acesse `http://192.168.15.39/sensor` no navegador
-- Se o IP mudou, atualize em `server.js`
-
-### Dados históricos não carregam
-- Execute `python generate_precipitation_data.py` para gerar os dados
-
-### Porta 3000 ocupada
-- Altere `const PORT = 3000;` em `server.js` para outra porta (ex: 3001)
-
----
-
-## Formato dos Dados CSV
-
-Os arquivos CSV da CGESP seguem o formato:
-- Primeira coluna: Nome da região/zona (ex.: "CV - Casa Verde")
-- Colunas subsequentes: Precipitação diária em mm para cada dia do mês
-- Linhas iniciais podem conter metadados (ignoradas se começarem com "PREFEITURA", "SIURB", etc.)
-
----
-
-## Atualização de Dados
-
-Para atualizar os dados históricos:
-1. Adicione novos arquivos CSV na pasta `input/`
-2. Execute: `python generate_precipitation_data.py`
-3. Reinicie o servidor se necessário
+~~~text
+input/                         boletins mensais de pluviometria
+web/                           interface publicada na Vercel
+bridge/                        coletor do ESP32
+supabase/migrations/            esquema e políticas PostgreSQL
+supabase/functions/             recebimento das leituras
+tools/                          importação dos CSVs
+scripts/                        build da interface
+tests/                          testes do coletor e da importação
+docs/                           implantação e operação
+server.js                       servidor local e proxy do sensor
+index.html, dashboard.html      páginas do protótipo local anterior
+generate_precipitation_data.py,
+analisePreditiva.py             análises e gráficos exploratórios anteriores
+~~~
